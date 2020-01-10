@@ -1,0 +1,85 @@
+{
+  "_comment": "To set globals to be replaced put them below in the array in the format {name:data to be entered} then use with $name in location where the data should be entered",
+  "Globals": [
+    {"ESP-Contact" : "{ ESP: 800-456-5750 }"},
+    {"ISP" : "{ ISP: xxx-xxx-xxxx }"},
+    {"IT" : "{ IT: xxx-xxx-xxxx }"}
+  ],
+  "Targets": {
+    "WAN": {
+      "IP": {
+        "172.16.2.2": 1,
+        "8.8.8.8": 2
+      }
+    },
+    "ESP WAN": {
+      "IP": { "207.109.87.2": 1 }
+    },
+    "ESP VPN": {
+      "IP": { "172.16.2.2": 1 }
+    },
+    "DNS": {
+      "IP": { "Google.com": 1 }
+    }
+  },
+  "ErrorMap": {
+    "0000": [ "Internet Down" ],
+    "1101": [ "VPN Down", "Server Down" ],
+    "1002": [ "WAN Issue", "ESP Connection Down" ],
+    "1100": [ "VPN Down" ],
+    "1110": [ "DNS Down" ]
+  },
+  "QAMAP": {
+    "1100": {
+      "Tentative": [
+        "Antivirus",
+        "Network cable loose",
+        "Bad switch port"
+      ]
+    }
+  },
+  "SuggestMap": {
+    "INTERNET DOWN": {
+      "Description": [ "Your internect connection is down or has significant connectivity issues" ],
+      "Steps": [
+        "Contact IT person",
+        "Contact your ISP (IT person may be able to do this on your behalf)",
+        "If this results in extended downtime, reach out to ESP for potential workarounds",
+        "(Optional): Try resetting your cable or another ISP modem"
+      ],
+      "ContactList": [
+        "$ISP",
+        "$IT",
+        "$ESP-Contact"
+      ]
+    },
+    "VPN DOWN": {
+      "Description": "Tunnel to ESP is not up",
+      "Steps": [
+        "Open TeamViewer and have ID ready",
+        "Contact ESP",
+        { "OPTIONAL": "Try resetting your firewall or connect existing Pritunl instances in the mean-time" }
+      ],
+      "ContactList": [ "$ESP-Contact" ]
+    },
+    "ESP CONNECTION DOWN": {
+      "Description": "An issue with ESP's internet connection",
+      "Steps": [ "Contact ESP to report the issue", "Contact your IT person (if applicable) to find a work around" ],
+      "ContactList": [ "$ESP-Contact" ]
+    },
+    "SERVER DOWN": {
+      "Description": "Server may be down or significant connectivity issues",
+      "Steps": [ "Contact IT person (if applicable)", "Contact ESP to report the issue" ],
+      "ContactList": [ "$ESP-Contact" ]
+    },
+    "WAN ISSUE": {
+      "Description": "A WAN routing issue, such as a fiber cut, impacting the connectio to ESP",
+      "Steps": [ "Contact ESP to report the issue", "Contact your IT person (if applicable) to find a work around" ],
+      "ContactList": [ "$ESP-Contact" ]
+    },
+    "DNS DOWN": {
+      "Description": "Your DNS server is unavailable",
+      "Steps": [ "Contact IT person (if applicable)" ]
+    }
+  }
+}

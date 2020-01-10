@@ -1,0 +1,108 @@
+﻿<Window x:Class="Connectivity_Troubleshooter.InfoWin"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Connectivity_Troubleshooter"
+        mc:Ignorable="d"
+        Title="InfoWin"  Width="800"
+        SizeToContent="Height">
+    <Grid Name="Wrapper" Margin="30,25,30,50" Background="Transparent" Height="auto">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid Height="50" Grid.Row="0" Background="SteelBlue" Margin="5,5,5,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBlock Name="Intro" Text="User at" Grid.Column="1" Grid.Row="0" TextAlignment="Center" FontWeight="Bold" FontSize="15" Foreground="White"/>
+            <TextBlock Name="CU" Text="Credit Union Name" FontWeight="Bold" Grid.Column="1"  Grid.Row="1" TextAlignment="Center" FontSize="15" Foreground="White"/>
+        </Grid>
+        <Border CornerRadius="5,5,5,5" BorderThickness="3" Grid.Column="0" Grid.ColumnSpan="2" Padding="1" BorderBrush="DimGray" />
+        <Grid Margin="10,25,10,20" Grid.Row="1" Height="Auto">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Diagnosis" FontWeight="Bold" Grid.Column="0" Grid.Row="0"/>
+            <TextBlock Name="Diagnosis" Text="Enter Data Here" Margin="10,5,0,0" Grid.Column="0" Grid.Row="1"/>
+
+            <Grid Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Margin="2,-20,2,-20" Background="LightGray" Height="Auto">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Text="Error Code: " FontWeight="Bold" Margin="10,5,0,0" Grid.Column="0"/>
+                <TextBlock Name="Code" Text="Enter Error Code Here" Margin="0,5,0,0" Foreground="Red" Grid.Column="1"/>
+                <TextBlock Text="Raw Code: " FontWeight="Bold" Margin="10,20,0,0" Grid.Column="0"/>
+                <TextBlock Name="Raw" Text="Enter Raw Code Here"  Grid.Column="1" Margin="0,20,0,0"/>
+                <TextBlock Text="Please have this information ready before contacting ESP" Grid.Row="1" Grid.ColumnSpan="2" TextWrapping="Wrap" Foreground="Green" FontWeight="Bold" TextAlignment="Center" Margin="10,2,0,0"/>
+            </Grid>
+            <Border CornerRadius="5,5,5,5" BorderThickness="3" Grid.Column="1" Grid.ColumnSpan="2" Padding="1" BorderBrush="DimGray" Margin="0,-20,0,0" />
+            <Border CornerRadius="5,5,5,5" BorderThickness="3" Grid.Column="1" Grid.ColumnSpan="2" Grid.RowSpan="2" Padding="1" BorderBrush="DimGray" Margin="0,-20,0,10" />
+
+            <TextBlock Text="Description and Steps" FontWeight="Bold" Grid.Column="0" Grid.Row="2"/>
+            <Grid Name="descGrid"  Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                </Grid.RowDefinitions>
+
+            </Grid>
+            
+            
+            
+            <TextBlock Text="Contacts" FontWeight="Bold" Margin="0,5,0,0" Grid.Column="0" Grid.Row="4"/>
+            <TextBlock Name="Contact" Text="Enter Contacts Here" Margin="10,5,0,0" Grid.Column="0" Grid.Row="5" Grid.ColumnSpan="3"/>
+        </Grid>
+        <Grid Name="QA" Visibility="Hidden" Grid.Row="2" Margin="0,0,0,-250" Height="Auto">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Row="0" Grid.ColumnSpan="2" Background="Orange">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Text="Problems based off your responces" HorizontalAlignment="Center" FontSize="15" FontWeight="Bold" Margin="0,5,0,5"/>
+                <Border CornerRadius="5,5,5,5" BorderThickness="3" Grid.Column="0" Grid.ColumnSpan="2" Padding="1" BorderBrush="DimGray" />
+            </Grid>
+            <TextBlock Text="Problem Name" FontWeight="Bold" Grid.Row="1" Grid.Column="0" Margin="10,0,0,0"/>
+            <TextBlock Name="ProblemName" Text="Enter problem name" Grid.Row="2" Grid.Column="0" Margin="15,5,0,0"/>
+            <TextBlock Text="Question Answer Code:" FontWeight="Bold" Grid.Row="1" Grid.Column="1"/>
+            <TextBlock Name="QACode" Text="Enter Code" Grid.Row="2" Grid.Column="1" Margin="10,5,0,5"/>
+            <TextBlock Text="Possible Problem" FontWeight="Bold" Grid.Row="3" Margin="10,0,0,0"/>
+            <TextBlock Name="ProblemMap" Text="Enter problem map" Grid.Row="4" Margin="15,5,0,5" Grid.ColumnSpan="2"/>
+        </Grid>
+        <Border CornerRadius="5,5,5,5" BorderThickness="5" Padding="1" BorderBrush="DimGray" Grid.ColumnSpan="3" Grid.RowSpan="2"/>
+        <Border Name="QaBorder" CornerRadius="5,5,5,5" BorderThickness="5" Padding="1" BorderBrush="DimGray" Grid.ColumnSpan="3" Grid.RowSpan="4" Visibility="Visible"/>
+    </Grid>
+</Window>
