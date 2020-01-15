@@ -109,21 +109,21 @@ namespace Connectivity_Troubleshooter
 
 
                 //runs the ping scan to find the error code 
-                /*
+                
                 Window1 window1 = new Window1(toolkit);
                 window1.Show();
-                */
+                
 
 
 
 
                 //test codes without running full scan
                 //comment out above section and uncomment below section
-                
+                /*
                 toolkit.Ernum = "1101010";
                 InfoWin Info = new InfoWin(toolkit);
                 Info.Show();
-                
+                */
 
                 this.Close();
             }

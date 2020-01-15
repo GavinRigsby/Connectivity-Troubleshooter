@@ -16,6 +16,8 @@ using System.Diagnostics;
 using System.ComponentModel;
 using System.IO;
 using System.Net.Sockets;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace Connectivity_Troubleshooter
 {
@@ -48,8 +50,13 @@ namespace Connectivity_Troubleshooter
 
         }
 
-        public int GetNetworkStats(string host, int scantime)
+        public void GetNetworkStats(string host, int scantime, ConcurrentQueue<Dictionary<string,int>> queue, int weight)
         {
+            string[] identifier = host.Split('|');
+            string proticolID = identifier[0];
+            string proticolIP = identifier[1];
+
+
             int timeout = 5000;
             Ping pingSender = new Ping();
             PingOptions options = new PingOptions(); // default is: don't fragment and 128 Time-to-Live
@@ -66,10 +73,10 @@ namespace Connectivity_Troubleshooter
             int pingAmount = 0;
             while (ts.Seconds < scantime)
             {
-                System.Diagnostics.Debug.WriteLine(host);
+                System.Diagnostics.Debug.WriteLine(proticolIP);
                 try
                 {
-                    PingReply reply = pingSender.Send(host, timeout, buffer, options);
+                    PingReply reply = pingSender.Send(proticolIP, timeout, buffer, options);
 
 
 
@@ -99,21 +106,29 @@ namespace Connectivity_Troubleshooter
 
             //MessageBox.Show("average " + Convert.ToString(averagePing) + "\npacket Loss " + Convert.ToString(packetLoss) + "\nfailed " + Convert.ToString(failedPings) + "\n amount " + Convert.ToString(pingAmount) + "\n latency " + Convert.ToString(pingAmount));
 
+            int value;
+
             //up
             if (packetLoss < 1)
             {
-                return 1;
+                value = 1;
             }
             //unstable
             else if (1 <= packetLoss && packetLoss <= 5)
             {
-                return 2;
+                value = 2;
             }
             //down
             else
             {
-                return 0;
+                value = 0;
             }
+
+            Dictionary<string, int> ret = new Dictionary<string, int>();
+            int val = Convert.ToInt32(value.ToString() + "9" + weight.ToString());
+            ret.Add(proticolID,val);
+            queue.Enqueue(ret);
+
         }
 
         
@@ -174,52 +189,61 @@ namespace Connectivity_Troubleshooter
             }
         }
 
-
-        
+        public Thread lastthread;
 
         public void make_Pings()
         {
-            int tasks = 6;
-            int running = 0;
-            foreach(KeyValuePair<string,Dictionary<string,Dictionary<string,int>>> target in this.toolkit.targets)
+            //Declares all the neccessary elements needed
+            bool pinging = true;
+            List<Dictionary<string, int>> WAN = new List<Dictionary<string, int>>();
+            List<Dictionary<string, int>> ESP_WAN = new List<Dictionary<string, int>>();
+            List<Dictionary<string, int>> ESP_VPN = new List<Dictionary<string, int>>();
+            List<Dictionary<string, int>> DNS = new List<Dictionary<string, int>>();
+            List<Dictionary<string, int>> NET_DEVICES = new List<Dictionary<string, int>>();
+            ConcurrentQueue<Dictionary<string, int>> PendingDevices = new ConcurrentQueue<Dictionary<string, int>>();
+            ConcurrentQueue<Dictionary<string, int>> PingOut = new ConcurrentQueue<Dictionary<string, int>>();
+            int endWan = 5;
+            int endEspWan = 5;
+            int endEspVpn = 5;
+            int endDns = 5;
+            int endNet = 5;
+            int endDefGat = 5;
+
+            Dictionary<string, int> InternalScan = toolkit.js["Internal Scan"].ToObject<Dictionary<string, int>>();
+            int NetTime = InternalScan["ScanTime"];
+            int Depth = InternalScan["Network Depth"];
+
+            //goes through each target and adds them to respective list
+            foreach (KeyValuePair<string, Dictionary<string, Dictionary<string, int>>> target in this.toolkit.targets)
             {
-                string ipname = target.Key;
+                string proticol = target.Key;
                 Dictionary<string, int> Connection = target.Value["IP"];
-                
-                int value = 0;
                 foreach (KeyValuePair<string, int> ip in Connection)
                 {
-
-                    running += 1;
-                    string ipaddr = ip.Key;
-                    int w = ip.Value;
-                    this.Dispatcher.BeginInvoke(new Action(() =>
+                    Dictionary<string, int> address = new Dictionary<string, int>();
+                    if (proticol == "WAN")
                     {
-                        this.running.Text = "Test Running: " + ipname;
-                        this.finished.Text = running.ToString() + "/" + tasks.ToString() + " Tests Run";
-                    }));
-                    int stage = GetNetworkStats(ipaddr, 30);
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        Indicator ind = new Indicator();
-                        ind.colorupdate(ipname, stage);
-                        this.Indicators.Children.Add(ind.returnGrid());
-                    }));
-                    if (stage == 1)
-                    {
-                        value = w;
-                        break;
+                        address.Add("a|" + ip.Key, ip.Value);
+                        WAN.Add(address);
                     }
-                    value = stage;
-                    if (!Connection[ip.Key].Equals(Connection.Last().Value))
+                    if (proticol == "ESP WAN")
                     {
-                        tasks += 1;
+                        address.Add("b|" + ip.Key, ip.Value);
+                        ESP_WAN.Add(address);
                     }
-
+                    if (proticol == "ESP VPN")
+                    {
+                        address.Add("c|" + ip.Key, ip.Value);
+                        ESP_VPN.Add(address);
+                    }
+                    if (proticol == "DNS")
+                    {
+                        address.Add("d|" + ip.Key, ip.Value);
+                        DNS.Add(address);
+                    }
                 }
-                this.ErrorMap += value.ToString();
             }
-            
+
             //runs arp and puts in arp.txt
             Process process = new Process();
             ProcessStartInfo startInfo = new ProcessStartInfo();
@@ -233,99 +257,45 @@ namespace Connectivity_Troubleshooter
             process.Start();
             string output = process.StandardOutput.ReadToEnd();
             process.WaitForExit();
-            //check pinging the gateway
 
-            string gateway = NetworkInterface.GetAllNetworkInterfaces().Where(n => n.OperationalStatus == OperationalStatus.Up).Where(n => n.NetworkInterfaceType != NetworkInterfaceType.Loopback).SelectMany(n => n.GetIPProperties()?.GatewayAddresses).Select(g => g?.Address).Where(a => a != null).FirstOrDefault().ToString();
-
-            Dictionary<string, int> InternalScan = toolkit.js["Internal Scan"].ToObject<Dictionary<string, int>>();
-            int scantime = InternalScan["ScanTime"];
-            int depth = InternalScan["Network Depth"];
-            running += 1;
-            this.Dispatcher.BeginInvoke(new Action(() =>
-            {
-                this.running.Text = "Test Running: Default Gateway";
-                this.finished.Text = running.ToString() + "/" + tasks.ToString() + " Tests Run";
-            }));
-            int gatestatus = GetNetworkStats(gateway, scantime);
-            this.Dispatcher.BeginInvoke(new Action(() =>
-            {
-                Indicator ind = new Indicator();
-                ind.colorupdate("Default Gateway", gatestatus);
-                this.Indicators.Children.Add(ind.returnGrid());
-            }));
-
-            
-
-            string subnet = gateway.Substring(0, 8);
-
-
-
-            //TextReader ARPin = new StreamReader(@"arp.txt");
-            string strARP = output;
-                /*ARPin.ReadToEnd();
-            ARPin.Close();*/
-
-            string internalIP = strARP.Substring(testARP(strARP, subnet, 2), 10);
-            int Arpstatus = 0;
-            int weight = 4;
-            int devicesScans = 0;
+            //Gets all network devices declared in config
             Dictionary<string, int> Devices = toolkit.js["Credit Unions"][toolkit.QAmap[1]]["Network Devices"].ToObject<Dictionary<string, int>>();
-            if (Devices.Count > 0)
-            {
-                foreach (KeyValuePair<string, int> device in Devices)
+
+            //Adds all network devices from config to NET_DEVICES
+            foreach (KeyValuePair<string, int> ip in Devices) {
+                if (Depth > 0)
                 {
-                    running += 1;
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    { 
-                        this.running.Text = "Test Running: Network Devices";
-                        this.finished.Text = running.ToString() + "/" + tasks.ToString() + " Tests Run";
-                    }));
-                    Arpstatus = GetNetworkStats(device.Key, scantime);
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        Indicator ind = new Indicator();
-                        ind.colorupdate("Network Devices", Arpstatus);
-                        this.Indicators.Children.Add(ind.returnGrid());
-                    }));
-                    devicesScans += 1;
-                    if (Arpstatus == 1)
-                    {
-                        weight = device.Value;
-                    }
+                    Dictionary<string, int> address = new Dictionary<string, int>();
+                    address.Add("e|" + ip.Key, ip.Value);
+                    NET_DEVICES.Add(address);
+                    Depth--;
+                }
+                else
+                {
                     break;
                 }
             }
-            if (Arpstatus != 1)
-            {
-                running += 1;
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    this.running.Text = "Test Running: Network Devices";
-                    this.finished.Text = running.ToString() + "/" + tasks.ToString() + " Tests Run";
-                }));
-                Arpstatus = GetNetworkStats(internalIP, scantime);
 
-                int scans = 1 + devicesScans;
-                int occurance = 1;
-                while (scans <= depth && (Arpstatus != 1))
-                    scans += 1;
-                    occurance += 1;
-                    running += 1;
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        this.running.Text = "Test Running: Network Devices";
-                        this.finished.Text = running.ToString() + "/" + tasks.ToString() + " Tests Run";
-                    }));
-                    internalIP = strARP.Substring(testARP(strARP, subnet, occurance), 10);
-                    Arpstatus = GetNetworkStats(internalIP, scantime);
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        Indicator ind = new Indicator();
-                        ind.colorupdate("Network Devices", Arpstatus);
-                        this.Indicators.Children.Add(ind.returnGrid());
-                    }));
-                weight = InternalScan["stage " + scans.ToString()];
+            //find gateway and subnet
+            string gateway = NetworkInterface.GetAllNetworkInterfaces().Where(n => n.OperationalStatus == OperationalStatus.Up).Where(n => n.NetworkInterfaceType != NetworkInterfaceType.Loopback).SelectMany(n => n.GetIPProperties()?.GatewayAddresses).Select(g => g?.Address).Where(a => a != null).FirstOrDefault().ToString();
+            string subnet = gateway.Substring(0, 8);
+
+            //TextReader ARPin = new StreamReader(@"arp.txt");
+            string strARP = output;
+
+            //adds ips from arp into NET_DEVICES until Depth is 0;
+            int netitter = 0;
+            while (Depth > 0)
+            {
+                string internalIP = strARP.Substring(testARP(strARP, subnet, 2 + netitter), 10);
+                int weight = InternalScan["stage " + (netitter + 1).ToString()];
+                Dictionary<string, int> address = new Dictionary<string, int>();
+                address.Add("e|" + internalIP, weight);
+                NET_DEVICES.Add(address);
+                netitter++;
+                Depth--;
             }
+
 
             int sqlopen = 2;
             using (TcpClient tcpClient = new TcpClient())
@@ -342,23 +312,178 @@ namespace Connectivity_Troubleshooter
                 }
             }
 
+            Dictionary<string, int> gate = new Dictionary<string, int>();
+            gate.Add("f|" + gateway, 1);
 
-            toolkit.NID = gatestatus.ToString() + weight.ToString() + sqlopen.ToString();
-            this.ErrorMap += toolkit.NID;
+            PendingDevices.Enqueue(gate);
 
+            PendingDevices.Enqueue(WAN.First());
+            PendingDevices.Enqueue(ESP_WAN.First());
+            PendingDevices.Enqueue(ESP_VPN.First());
+            PendingDevices.Enqueue(DNS.First());
 
-            Task.Delay(2000).ContinueWith(_ =>
+            int additionalping = 0;
+            while (pinging)
             {
-                this.Dispatcher.BeginInvoke(new Action(() =>
+                if (PendingDevices.IsEmpty)
                 {
-                    this.toolkit.Ernum = this.ErrorMap;
-                    InfoWin Info = new InfoWin(this.toolkit);
-                    Info.Show();
-                    this.Close();
+                    break;
+                }
+                foreach (Dictionary<string, int> device in PendingDevices)
+                {
+                    foreach (KeyValuePair<string, int> item in device)
+                    {
 
-                }));
+                        Thread thread = new Thread(() => GetNetworkStats(item.Key, 30, PingOut, item.Value));
+                        thread.Start();
+                        lastthread = thread;
+                    }
+                }
+                while (lastthread.IsAlive) {
+                    if (PingOut.TryDequeue(out Dictionary<string, int> endping))
+                    {
+                        foreach (KeyValuePair<string, int> p in endping)
+                        {
+                            string PID = p.Key;
+                            string[] retVals = p.Value.ToString().Split('9');
+                            int value = Convert.ToInt32(retVals[0]);
+                            int weight = Convert.ToInt32(retVals[1]);
+                            string ipname;
+                            if (PID == "a")
+                            {
+                                ipname = "WAN";
+                            }
+                            if (PID == "b")
+                            {
+                                ipname = "ESP WAN";
+                            }
+                            if (PID == "c")
+                            {
+                                ipname = "ESP VPN";
+                            }
+                            if (PID == "d")
+                            {
+                                ipname = "DNS";
+                            }
+                            if (PID == "e")
+                            {
+                                ipname = "Network Device";
+                            }
+                            else
+                            {
+                                ipname = "Default Gateway";
+                            }
+
+                            Indicator ind = new Indicator();
+                            if (value == 1)
+                            {
+                                ind.colorupdate(ipname, weight);
+                                if (ipname == "WAN")
+                                {
+                                    endWan = weight;
+                                }
+                                if (ipname == "ESP WAN")
+                                {
+                                    endEspWan = weight;
+                                }
+                                if (ipname == "ESP VPN")
+                                {
+                                    endEspVpn = weight;
+                                }
+                                if (ipname == "DNS")
+                                {
+                                    endDns = weight;
+                                }
+                                if (ipname == "Network Device")
+                                {
+                                    endNet = weight;
+                                }
+                                else
+                                {
+                                    endDefGat = 1;
+                                }
+                            }
+                            else
+                            {
+                                additionalping++;
+                                ind.colorupdate(ipname, value);
+                                int itter = 0;
+                                if (ipname == "WAN")
+                                {
+                                    foreach (Dictionary<string, int> item in WAN)
+                                    {
+                                        if (itter == additionalping)
+                                        {
+                                            PendingDevices.Enqueue(item);
+                                            break;
+                                        }
+                                        itter++;
+                                    }
+
+                                }
+                                if (ipname == "ESP WAN")
+                                {
+                                    foreach (Dictionary<string, int> item in ESP_WAN)
+                                    {
+                                        if (itter == additionalping)
+                                        {
+                                            PendingDevices.Enqueue(item);
+                                            break;
+                                        }
+                                        itter++;
+                                    }
+                                }
+                                if (ipname == "ESP VPN")
+                                {
+                                    foreach (Dictionary<string, int> item in ESP_VPN)
+                                    {
+                                        if (itter == additionalping)
+                                        {
+                                            PendingDevices.Enqueue(item);
+                                            break;
+                                        }
+                                        itter++;
+                                    }
+                                }
+                                if (ipname == "DNS")
+                                {
+                                    foreach (Dictionary<string, int> item in DNS)
+                                    {
+                                        if (itter == additionalping)
+                                        {
+                                            PendingDevices.Enqueue(item);
+                                            break;
+                                        }
+                                        itter++;
+                                    }
+                                }
+                                if (ipname == "Network Device")
+                                {
+                                    foreach (Dictionary<string, int> item in NET_DEVICES)
+                                    {
+                                        if (itter == additionalping)
+                                        {
+                                            PendingDevices.Enqueue(item);
+                                            break;
+                                        }
+                                        itter++;
+                                    }
+                                }
+                            }
+                            this.Indicators.Children.Add(ind.returnGrid());
+                        }
+                    }
+                }
+
             }
-            );
+
+            toolkit.NID = endWan.ToString() + endEspWan.ToString() + endEspVpn.ToString() + endDns.ToString() + endDefGat.ToString() + endNet.ToString() + sqlopen.ToString();
+            this.ErrorMap += toolkit.NID;
+            this.toolkit.Ernum = this.ErrorMap;
+            InfoWin Info = new InfoWin(this.toolkit);
+            Info.Show();
+            this.Close();    
+            
         }
 
         public int testARP(string strLog, string subnet, int occurence)

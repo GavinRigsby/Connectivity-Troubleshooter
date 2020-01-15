@@ -60,7 +60,8 @@
                 <TextBlock Text="Please have this information ready before contacting ESP" Grid.Row="1" Grid.ColumnSpan="2" TextWrapping="Wrap" Foreground="Green" FontWeight="Bold" TextAlignment="Center" Margin="10,2,0,0"/>
             </Grid>
             <Border CornerRadius="5,5,5,5" BorderThickness="3" Grid.Column="1" Grid.ColumnSpan="2" Padding="1" BorderBrush="DimGray" Margin="0,-20,0,0" />
-            <Border CornerRadius="5,5,5,5" BorderThickness="3" Grid.Column="1" Grid.ColumnSpan="2" Grid.RowSpan="2" Padding="1" BorderBrush="DimGray" Margin="0,-20,0,10" />
+            <Border CornerRadius="5,5,5,5" BorderThickness="3" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" Grid.RowSpan="2" Padding="1" BorderBrush="DimGray"  Margin="0,-20,-1,8"/>
+            
 
             <TextBlock Text="Description and Steps" FontWeight="Bold" Grid.Column="0" Grid.Row="2"/>
             <Grid Name="descGrid"  Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3">
