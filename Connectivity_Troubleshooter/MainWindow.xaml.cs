@@ -24,35 +24,54 @@ namespace Connectivity_Troubleshooter
 {
     public partial class MainWindow : Window
     {
+
         Json_tool toolkit = new Json_tool();
         public MainWindow()
         {
             InitializeComponent();
-            List<string> Unions = toolkit.PopulateCU();
-            foreach (string union in Unions)
+            Object Unions = toolkit.PopulateCU(this);
+            if (Unions is ComboBox)
             {
-                ComboBoxItem item = new ComboBoxItem();
-                item.Content = union;
-                CU.Items.Add(item);
-
+                this.ComboCU = (ComboBox)Unions;
+            }
+            else
+            {
+                this.TxtCU = (TextBox)Unions;
             }
         }
+
+        public ComboBox ComboCU { get; private set; }
+        public TextBox TxtCU { get; private set; }
 
         private void Start_Test(object sender, RoutedEventArgs e)
         {
             //Some validation to check if Credit Union is filled in & radiobuttons are clicked
             //items turn red when user clickes button to continue
             //all red items must be filled before continuing to the scan
-            
-            if (CU.Text == " ")
+
+            if (ComboCU != null)
             {
-                CU.BorderBrush = System.Windows.Media.Brushes.Red;
-                CU.Background = System.Windows.Media.Brushes.Red;
+                if (ComboCU.Text == " ")
+                {
+                    ComboCU.BorderBrush = System.Windows.Media.Brushes.Red;
+                    ComboCU.Background = System.Windows.Media.Brushes.Red;
+                }
+                else
+                {
+                    ComboCU.BorderBrush = System.Windows.Media.Brushes.White;
+                    ComboCU.Background = System.Windows.Media.Brushes.White;
+                }
             }
-            else
+            if (TxtCU != null)
             {
-                CU.BorderBrush = System.Windows.Media.Brushes.White;
-                CU.Background = System.Windows.Media.Brushes.White;
+                if (String.IsNullOrEmpty(TxtCU.Text))
+                {
+                    TxtCU.BorderBrush = System.Windows.Media.Brushes.Red;
+                }
+                else
+                {
+                    TxtCU.BorderBrush = System.Windows.Media.Brushes.Gray;
+                }
             }
             if ((one.IsChecked ?? false) || (mult.IsChecked ?? false))
             {
@@ -74,7 +93,7 @@ namespace Connectivity_Troubleshooter
                 Intermittent.BorderBrush = System.Windows.Media.Brushes.Red;
                 Constant.BorderBrush = System.Windows.Media.Brushes.Red;
             }
-            if ((CU.Text != " ") && ((one.IsChecked ?? false) || (mult.IsChecked ?? false)) && ((Intermittent.IsChecked ?? false) || (Constant.IsChecked ?? false)))
+            if (((TxtCU != null && !String.IsNullOrEmpty(TxtCU.Text)) || (ComboCU != null && !String.IsNullOrEmpty(ComboCU.Text))) && ((one.IsChecked ?? false) || (mult.IsChecked ?? false)) && ((Intermittent.IsChecked ?? false) || (Constant.IsChecked ?? false)))
             { 
                 //takes all user inputs and makes the QAMAP with the QA number the users Credit Union, Name, etc..
                 string CreditUnion = CU.Text;
@@ -112,6 +131,7 @@ namespace Connectivity_Troubleshooter
                 
                 Window1 window1 = new Window1(toolkit);
                 window1.Show();
+                
                 
 
 

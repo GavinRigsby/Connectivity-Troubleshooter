@@ -208,38 +208,52 @@ namespace Connectivity_Troubleshooter
             int endDns = 0;
             int endNet = 0;
             int endDefGat = 0;
+            int NetTime = 30;
+            int Depth = 5;
+            Dictionary<string, int> InternalScan = null;
 
-            Dictionary<string, int> InternalScan = toolkit.js["Internal Scan"].ToObject<Dictionary<string, int>>();
-            int NetTime = InternalScan["ScanTime"];
-            int Depth = InternalScan["Network Depth"];
+
+            try
+            {
+                InternalScan = toolkit.js["Internal Scan"].ToObject<Dictionary<string, int>>();
+                NetTime = InternalScan["ScanTime"];
+                Depth = InternalScan["Network Depth"];
+            }
+            catch
+            {
+                Console.Write("No Internal Scan found in config");
+                
+            }
 
             //goes through each target and adds them to respective list
-            foreach (KeyValuePair<string, Dictionary<string, Dictionary<string, int>>> target in this.toolkit.targets)
-            {
-                string proticol = target.Key;
-                Dictionary<string, int> Connection = target.Value["IP"];
-                foreach (KeyValuePair<string, int> ip in Connection)
+            if (this.toolkit.targets != null){
+                foreach (KeyValuePair<string, Dictionary<string, Dictionary<string, int>>> target in this.toolkit.targets)
                 {
-                    Dictionary<string, int> address = new Dictionary<string, int>();
-                    if (proticol == "WAN")
+                    string proticol = target.Key;
+                    Dictionary<string, int> Connection = target.Value["IP"];
+                    foreach (KeyValuePair<string, int> ip in Connection)
                     {
-                        address.Add("a|" + ip.Key, ip.Value);
-                        WAN.Add(address);
-                    }
-                    if (proticol == "ESP WAN")
-                    {
-                        address.Add("b|" + ip.Key, ip.Value);
-                        ESP_WAN.Add(address);
-                    }
-                    if (proticol == "ESP VPN")
-                    {
-                        address.Add("c|" + ip.Key, ip.Value);
-                        ESP_VPN.Add(address);
-                    }
-                    if (proticol == "DNS")
-                    {
-                        address.Add("d|" + ip.Key, ip.Value);
-                        DNS.Add(address);
+                        Dictionary<string, int> address = new Dictionary<string, int>();
+                        if (proticol == "WAN")
+                        {
+                            address.Add("a|" + ip.Key, ip.Value);
+                            WAN.Add(address);
+                        }
+                        if (proticol == "ESP WAN")
+                        {
+                            address.Add("b|" + ip.Key, ip.Value);
+                            ESP_WAN.Add(address);
+                        }
+                        if (proticol == "ESP VPN")
+                        {
+                            address.Add("c|" + ip.Key, ip.Value);
+                            ESP_VPN.Add(address);
+                        }
+                        if (proticol == "DNS")
+                        {
+                            address.Add("d|" + ip.Key, ip.Value);
+                            DNS.Add(address);
+                        }
                     }
                 }
             }
@@ -257,22 +271,32 @@ namespace Connectivity_Troubleshooter
             process.Start();
             string output = process.StandardOutput.ReadToEnd();
             process.WaitForExit();
+            Dictionary<string, int> Devices = null;
+            try
+            {
+                //Gets all network devices declared in config
+                Devices = toolkit.js["Credit Unions"][toolkit.QAmap[1]]["Network Devices"].ToObject<Dictionary<string, int>>();
+            }
+            catch
+            {
+                Console.Write("No Network Devices found from CU");
+            }
 
-            //Gets all network devices declared in config
-            Dictionary<string, int> Devices = toolkit.js["Credit Unions"][toolkit.QAmap[1]]["Network Devices"].ToObject<Dictionary<string, int>>();
-
-            //Adds all network devices from config to NET_DEVICES
-            foreach (KeyValuePair<string, int> ip in Devices) {
-                if (Depth > 0)
+            if (Devices != null){
+                //Adds all network devices from config to NET_DEVICES
+                foreach (KeyValuePair<string, int> ip in Devices)
                 {
-                    Dictionary<string, int> address = new Dictionary<string, int>();
-                    address.Add("e|" + ip.Key, ip.Value);
-                    NET_DEVICES.Add(address);
-                    Depth--;
-                }
-                else
-                {
-                    break;
+                    if (Depth > 0)
+                    {
+                        Dictionary<string, int> address = new Dictionary<string, int>();
+                        address.Add("e|" + ip.Key, ip.Value);
+                        NET_DEVICES.Add(address);
+                        Depth--;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
             }
 
@@ -287,7 +311,7 @@ namespace Connectivity_Troubleshooter
             //adds ips from arp into NET_DEVICES until Depth is 0;
             int netitter = 0;
             
-            while (Depth > 0)
+            while (InternalScan != null && Depth > 0) 
             {
                 string internalIP = subnet;
                 try
@@ -534,7 +558,15 @@ namespace Connectivity_Troubleshooter
         {
             InitializeComponent();
             this.toolkit = toolkit;
-            toolkit.Connections();
+            try
+            {
+                toolkit.Connections();
+            }
+            catch
+            {
+                Console.Write("No Credit Union Connections Found");
+            }
+            
             DataContext = this;
 
             _bgWorker.DoWork += (s, e) =>

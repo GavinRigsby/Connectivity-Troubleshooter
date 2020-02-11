@@ -1,15 +1,109 @@
 {
   "_comment": "To set globals to be replaced put them below in the array in the format {name:data to be entered} then use with $name in location where the data should be entered",
-  "Globals": [
-    {"ESP-Contact" : "{ ESP: 800-456-5750 }"},
-    {"ISP" : "{ ISP: xxx-xxx-xxxx }"},
-    {"IT" : "{ IT: xxx-xxx-xxxx }"}
-  ],
+  "Contacts": {
+    "ESP": "(800) 456-5750",
+    "ISP": "(xxx) xxx-xxxx",
+    "IT": "(xxx) xxx-xxxx"
+  },
+  "Hyperlinks": {
+    "TeamViewer": "https://www.teamviewer.com/en-us/",
+    "ESP": "http://www.esp.support/",
+    "ISP": "http://www.google.com/"
+  },
+  "Internal Scan": {
+    "ScanTime": 10,
+    "Network Depth": 5,
+    "stage 1": 1,
+    "stage 2": 2,
+    "stage 3": 2,
+    "stage 4": 2,
+    "stage 5": 2
+  },
+  "Logs": {
+    "ReturnIP": "True",
+    "ReturnOS": "True",
+    "ReturnName": "True",
+    "ReturnCU": "True",
+    "ReturnError": "True"
+  },
+  "Credit Unions": {
+    "Alaska AIr Group CU": {
+      "ID": [ "AH" ],
+      "Contacts": {
+        "IT": "(509) xxx-xxxx",
+        "ISP": "(888) xxx-xxxx",
+        "ESP": "(800) 456-7890"
+      },
+      "Targets": {
+        "ESP VPN": {
+          "IP": { "172.16.2.172": 1 }
+        }
+      },
+      "Network Devices": {
+        "8.8.8.8": 1,
+        "10.12.3.2": 1
+      }
+    },
+    "Gavin's Union": {
+      "ID": [ "GU" ],
+      "Contacts": {
+        "IT": "(509) xxx-xxxx",
+        "ISP": "(888) xxx-xxxx",
+        "ESP": "(800) 456-7890"
+      },
+      "Targets": {
+        "ESP WAN": {
+          "IP": { "8.8.8.8": 1 }
+        },
+        "ESP VPN": {
+          "IP": { "8.8.8.8": 1 }
+        },
+        "DNS": {
+          "IP": {
+            "8.8.8.8": 1
+          }
+        }
+      },
+      "Network Devices": {
+        "8.8.8.8": 1,
+        "10.12.3.2": 1
+      }
+    },
+    "American Lake CU": {
+      "ID": [ "AL" ],
+      "Contacts": {
+        "IT": "(xxx) xxx-xxxx",
+        "ISP": "(xxx) xxx-xxxx"
+      },
+      "Targets": {
+
+      }
+    },
+    "Arbuckle FCU": {
+      "ID": [ "AO" ],
+      "Contacts": {
+        "IT": "(xxx) xxx-xxxx",
+        "ISP": "(xxx) xxx-xxxx"
+      },
+      "Targets": {
+
+      }
+    },
+    "Connections CU": {
+      "ID": [ "PC" ],
+      "Contacts": {
+        "IT": "(xxx) xxx-xxxx",
+        "ISP": "(xxx) xxx-xxxx"
+      },
+      "Targets": {
+
+      }
+    }
+  },
   "Targets": {
     "WAN": {
       "IP": {
-        "172.16.2.2": 1,
-        "8.8.8.8": 2
+        "8.8.8.8": 1
       }
     },
     "ESP WAN": {
@@ -22,12 +116,15 @@
       "IP": { "Google.com": 1 }
     }
   },
+  "COMMENT": "| WAN | ESP WAN | ESP VPN | DNS | Default Gateway | Network Devices | Sql open |",
   "ErrorMap": {
-    "0000": [ "Internet Down" ],
-    "1101": [ "VPN Down", "Server Down" ],
-    "1002": [ "WAN Issue", "ESP Connection Down" ],
-    "1100": [ "VPN Down" ],
-    "1110": [ "DNS Down" ]
+    "0000000": [ "Internet Down" ],
+    "1101000": [ "VPN Down", "Server Down" ],
+    "1002000": [ "WAN Issue", "ESP Connection Down" ],
+    "1100000": [ "VPN Down" ],
+    "1110000": [ "DNS Down" ],
+    "1111111": [ "Internet Down" ],
+    "1101010": [ "VPN Down", "Internet Down", "DNS Down" ]
   },
   "QAMAP": {
     "1100": {
@@ -43,43 +140,40 @@
       "Description": [ "Your internect connection is down or has significant connectivity issues" ],
       "Steps": [
         "Contact IT person",
-        "Contact your ISP (IT person may be able to do this on your behalf)",
+        "Contact your *ISP (IT person may be able to do this on your behalf)",
         "If this results in extended downtime, reach out to ESP for potential workarounds",
         "(Optional): Try resetting your cable or another ISP modem"
       ],
-      "ContactList": [
-        "$ISP",
-        "$IT",
-        "$ESP-Contact"
-      ]
+      "ContactList": [ "$ISP", "$IT", "$ESP" ]
     },
     "VPN DOWN": {
-      "Description": "Tunnel to ESP is not up",
+      "Description": [ "Tunnel to ESP is not up" ],
       "Steps": [
-        "Open TeamViewer and have ID ready",
-        "Contact ESP",
-        { "OPTIONAL": "Try resetting your firewall or connect existing Pritunl instances in the mean-time" }
+        "Open *TeamViewer and have ID ready",
+        "Contact *ESP",
+        "(Optional): Try resetting your firewall or connect existing Pritunl instances in the mean-time"
       ],
-      "ContactList": [ "$ESP-Contact" ]
+      "ContactList": [ "$ESP" ]
     },
     "ESP CONNECTION DOWN": {
-      "Description": "An issue with ESP's internet connection",
+      "Description": [ "An issue with ESP's internet connection" ],
       "Steps": [ "Contact ESP to report the issue", "Contact your IT person (if applicable) to find a work around" ],
-      "ContactList": [ "$ESP-Contact" ]
+      "ContactList": [ "$ESP" ]
     },
     "SERVER DOWN": {
-      "Description": "Server may be down or significant connectivity issues",
+      "Description": [ "Server may be down or significant connectivity issues" ],
       "Steps": [ "Contact IT person (if applicable)", "Contact ESP to report the issue" ],
-      "ContactList": [ "$ESP-Contact" ]
+      "ContactList": [ "$ESP" ]
     },
     "WAN ISSUE": {
-      "Description": "A WAN routing issue, such as a fiber cut, impacting the connectio to ESP",
+      "Description": [ "A WAN routing issue, such as a fiber cut, impacting the connectio to ESP" ],
       "Steps": [ "Contact ESP to report the issue", "Contact your IT person (if applicable) to find a work around" ],
-      "ContactList": [ "$ESP-Contact" ]
+      "ContactList": [ "$ESP" ]
     },
     "DNS DOWN": {
-      "Description": "Your DNS server is unavailable",
-      "Steps": [ "Contact IT person (if applicable)" ]
+      "Description": [ "Your DNS server is unavailable" ],
+      "Steps": [ "Contact IT person (if applicable)" ],
+      "ContactList": [ "$IT" ]
     }
   }
 }

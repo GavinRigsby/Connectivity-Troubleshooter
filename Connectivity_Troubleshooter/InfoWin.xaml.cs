@@ -31,7 +31,7 @@ namespace Connectivity_Troubleshooter
         }
 
 
-        public int fromDigits(List<int> digits, int b) {
+        public int FromDigits(List<int> digits, int b) {
             ///Compute the number given by digits in base b.
             int n = 0;
             foreach (int d in digits) {
@@ -56,7 +56,7 @@ namespace Connectivity_Troubleshooter
             this.Raw.Text = toolkit.Ernum.ToString();
             //base 3 to decimal to hexadecimal
             List<int> digits = toolkit.Ernum.Select(x => Convert.ToInt32(x.ToString())).ToList();
-            this.Code.Text = fromDigits(digits, 3).ToString("X");
+            this.Code.Text = FromDigits(digits, 3).ToString("X");
 
             //runs DisplaySteps and sets steps, description, and contact on page
             toolkit.DisplaySteps();

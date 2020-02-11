@@ -9,7 +9,7 @@
         SizeToContent="Height">
     
     <Border Padding="10">
-        <StackPanel Margin="0.4,0.4,.4,.4">
+        <StackPanel Name="Stack" Margin="0.4,0.4,.4,.4">
             <Grid Margin="-15,0,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="139"/>
@@ -20,7 +20,6 @@
             </Grid>
             <ComboBox Name="CU" Margin="25 10 10 10" >
                 <ComboBoxItem Content=" " IsSelected="True"/>
-                
             </ComboBox>
             <!-- <TextBox Name="CU" Padding="5" Margin="25 10 10 10"/> -->
             

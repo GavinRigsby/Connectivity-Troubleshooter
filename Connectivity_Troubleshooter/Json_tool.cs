@@ -5,7 +5,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using System.Web;
-
+using System.Windows.Controls;
+using System.Windows;
 
 namespace Connectivity_Troubleshooter
 {
@@ -46,24 +47,41 @@ namespace Connectivity_Troubleshooter
             var jConf = JsonConvert.DeserializeObject<dynamic>(strJson);
 
             string CU = this.QAmap[1];
-            Dictionary<string, Dictionary<string, dynamic>> CUJson = jConf["Credit Unions"].ToObject<Dictionary<string, Dictionary<string, dynamic>>>();
-            Dictionary<string, string> CUcontacts = jConf["Credit Unions"][CU]["Contacts"].ToObject<Dictionary<string, string>>();
-            Dictionary<string, string> Globalcontacts = jConf["Contacts"].ToObject<Dictionary<string, string>>();
-            this.ID = CUJson[CU]["ID"][0].Value;
-            foreach (KeyValuePair<string, string> contact in CUcontacts)
+            try
             {
-                this.contacts += contact.Key + ": " + contact.Value + "," ;
-            }
-            foreach (KeyValuePair<string, string> contact in Globalcontacts)
-            {
-                if (!this.contacts.Contains(contact.Key))
+                Dictionary<string, Dictionary<string, dynamic>> CUJson = jConf["Credit Unions"].ToObject<Dictionary<string, Dictionary<string, dynamic>>>();
+                Dictionary<string, string> CUcontacts = jConf["Credit Unions"][CU]["Contacts"].ToObject<Dictionary<string, string>>();
+                this.ID = CUJson[CU]["ID"][0].Value;
+                foreach (KeyValuePair<string, string> contact in CUcontacts)
                 {
                     this.contacts += contact.Key + ": " + contact.Value + ",";
                 }
+                
             }
+            catch
+            {
+                Console.Write("No Credit Union Contacts Found");
+                this.ID = "NONE";
+            }
+            try
+            {
+                Dictionary<string, string> Globalcontacts = jConf["Contacts"].ToObject<Dictionary<string, string>>();
+                foreach (KeyValuePair<string, string> contact in Globalcontacts)
+                {
+                    if (!this.contacts.Contains(contact.Key))
+                    {
+                        this.contacts += contact.Key + ": " + contact.Value + ",";
+                    }
+                }
+            }
+            catch
+            {
+                this.contacts += "None: Found";
+            }
+            
 
 
-                dynamic Json = JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(strJson);
+            dynamic Json = JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(strJson);
             return Json;
         }
 
@@ -181,7 +199,7 @@ namespace Connectivity_Troubleshooter
         }
 
 
-        public List<string> PopulateCU()
+        /*public List<string> PopulateCU()
         {
             TextReader tr = new StreamReader(@"config.json");
             string strJson = tr.ReadToEnd();
@@ -193,8 +211,35 @@ namespace Connectivity_Troubleshooter
                 Unions.Add(Union.Key);
             }
             return Unions;
-        }
+        }*/
 
+        public object PopulateCU(MainWindow sender)
+        {
+            TextReader tr = new StreamReader(@"config.json");
+            string strJson = tr.ReadToEnd();
+            var json = JsonConvert.DeserializeObject<dynamic>(strJson);
+            try
+            {
+                Dictionary<string, dynamic> CreditUnions = json["Credit Unions"].ToObject<Dictionary<string, dynamic>>();
+                List<string> Unions = new List<string>();
+                foreach (KeyValuePair<string, dynamic> Union in CreditUnions)
+                {
+                    sender.CU.Items.Add(Union.Key);
+                }
+                return sender.CU;
+            }
+            catch
+            {
+                Console.Write("No Unions in Config using Textbox");
+                sender.Stack.Children.Remove(sender.CU);
+                TextBox tb = new TextBox();
+                tb.Name = "CU";
+                tb.Margin = new Thickness(25, 10, 10, 10);
+                tb.Padding = new Thickness(5);
+                sender.Stack.Children.Insert(1, tb);
+                return tb;
+            }
+        }
 
 
 
