@@ -90,26 +90,34 @@ namespace Connectivity_Troubleshooter
         //also checks for diagnosis' with wildcards "3" representing any value
         public string ErDisplay(string ErInput)
         {
-            if (this.js["ErrorMap"][ErInput] != null)
+            try
             {
-                this.Diagnosis = ReturnD(ErInput);
-                return this.Diagnosis;
-            }
-            else
-            {
-                //checks if there is a diagnosis that uses a wildcard that works
-                for (int i = 0; i < 7; i++)
+                if (this.js["ErrorMap"][ErInput] != null)
                 {
-                    char[] ch = ErInput.ToCharArray();
-                    ch[i] = '3';
-                    string newStr = new string(ch);
-                    if (this.js["ErrorMap"][newStr] != null)
+                    this.Diagnosis = ReturnD(ErInput);
+                    return this.Diagnosis;
+                }
+                else
+                {
+                    //checks if there is a diagnosis that uses a wildcard that works
+                    for (int i = 0; i < 7; i++)
                     {
-                        this.Diagnosis = ReturnD(newStr);
-                        return this.Diagnosis;
+                        char[] ch = ErInput.ToCharArray();
+                        ch[i] = '3';
+                        string newStr = new string(ch);
+                        if (this.js["ErrorMap"][newStr] != null)
+                        {
+                            this.Diagnosis = ReturnD(newStr);
+                            return this.Diagnosis;
+                        }
                     }
                 }
             }
+            catch
+            {
+                Console.Write("No Map for Diagnosis");
+            }
+            
             this.Diagnosis = "Unknown Error Code";
             return this.Diagnosis;
         }
@@ -175,27 +183,36 @@ namespace Connectivity_Troubleshooter
 
         public bool QAMap()
         {
-            Dictionary<string, Dictionary<string, string[]>> qa = this.js["QAMAP"].ToObject<Dictionary<string, Dictionary<string, string[]>>>();
-            string problems = "";
-            int probCount = 1;
-            foreach (KeyValuePair<string, Dictionary<string,string[]>> code in qa)
+            try
             {
-                if(this.QAmap[0] == code.Key)
+                Dictionary<string, Dictionary<string, string[]>> qa = this.js["QAMAP"].ToObject<Dictionary<string, Dictionary<string, string[]>>>();
+                string problems = "";
+                int probCount = 1;
+                foreach (KeyValuePair<string, Dictionary<string, string[]>> code in qa)
                 {
-                    
-                    foreach (KeyValuePair<string, string[]> problem in code.Value)
+                    if (this.QAmap[0] == code.Key)
                     {
-                        this.QAName = problem.Key;
-                        foreach (string item in problem.Value) {
-                            problems += probCount + ". " +item + "\n";
-                            probCount += 1;
+
+                        foreach (KeyValuePair<string, string[]> problem in code.Value)
+                        {
+                            this.QAName = problem.Key;
+                            foreach (string item in problem.Value)
+                            {
+                                problems += probCount + ". " + item + "\n";
+                                probCount += 1;
+                            }
                         }
+                        this.QAProb = problems;
+                        return true;
                     }
-                    this.QAProb = problems;
-                    return true;
                 }
+                return false;
             }
-            return false;
+            catch
+            {
+                Console.Write("Could not find QAMAP in config");
+                return false;
+            }
         }
 
 
@@ -248,72 +265,82 @@ namespace Connectivity_Troubleshooter
         //contacts do not have duplicates when multiple diagnosis' are given
         public void DisplaySteps()
         {
-            Dictionary<string, Dictionary<string, string[]>> Suggestion = this.js["SuggestMap"].ToObject<Dictionary<string, Dictionary<string, string[]>>>();
-            foreach (KeyValuePair<string, Dictionary<string, string[]>> diagnosis in Suggestion)
+            try
             {
+                Dictionary<string, Dictionary<string, string[]>> Suggestion = this.js["SuggestMap"].ToObject<Dictionary<string, Dictionary<string, string[]>>>();
+                foreach (KeyValuePair<string, Dictionary<string, string[]>> diagnosis in Suggestion)
+                {
 
-                //splits the diagnosis' into string array
-                string[] D = this.Diagnosis.ToUpper().Split('&');
-                //removes unneccisarry whitespace at end for searching config
-                foreach (string item in D){
-                    D[Array.IndexOf(D, item)] = item.Trim();
-                }
-                //searches through config for matching diagnosis
-                if(Array.IndexOf(D, diagnosis.Key) > -1) { 
-                    foreach (KeyValuePair<string, string[]> steps in diagnosis.Value)
+                    //splits the diagnosis' into string array
+                    string[] D = this.Diagnosis.ToUpper().Split('&');
+                    //removes unneccisarry whitespace at end for searching config
+                    foreach (string item in D)
                     {
-                        //print diagnosis descripition
-                        if (steps.Key == "Description")
+                        D[Array.IndexOf(D, item)] = item.Trim();
+                    }
+                    //searches through config for matching diagnosis
+                    if (Array.IndexOf(D, diagnosis.Key) > -1)
+                    {
+                        foreach (KeyValuePair<string, string[]> steps in diagnosis.Value)
                         {
-                            string[] desc = (String[])steps.Value;
-                            this.desc.Add(diagnosis.Key + ": " + desc[0] + "\n");
-                        }
-                        //print diagnosis steps
-                        else if (steps.Key == "Steps")
-                        {
-                            int stepcounter = 1;
-                            foreach (string step in steps.Value)
+                            //print diagnosis descripition
+                            if (steps.Key == "Description")
                             {
-                                this.steps.Add("\t" + stepcounter.ToString() + ". " + step + "\n");
-                                stepcounter += 1;
+                                string[] desc = (String[])steps.Value;
+                                this.desc.Add(diagnosis.Key + ": " + desc[0] + "\n");
                             }
-                        }
-                        //print diagnosis contacts
-                        else if (steps.Key == "ContactList")
-                        {
-                            //contact is string global
-                            string contactlist = "";
-                            Dictionary<string, string> Cucontacts = this.js["Credit Unions"][this.QAmap[1]]["Contacts"].ToObject<Dictionary<string, string>>();
-                            Dictionary<string, string> Globalcontacts = this.js["Contacts"].ToObject<Dictionary<string, string>>();
-                            foreach (string contact in steps.Value)
+                            //print diagnosis steps
+                            else if (steps.Key == "Steps")
                             {
-                                string thiscontact = contact.Replace("$", "");
-                                if (this.contacts.Contains(contact.Replace("$","")))
+                                int stepcounter = 1;
+                                foreach (string step in steps.Value)
                                 {
-                                    string number = Globalcontacts[thiscontact];
-                                    if (Cucontacts.ContainsKey(thiscontact))
+                                    this.steps.Add("\t" + stepcounter.ToString() + ". " + step + "\n");
+                                    stepcounter += 1;
+                                }
+                            }
+                            //print diagnosis contacts
+                            else if (steps.Key == "ContactList")
+                            {
+                                //contact is string global
+                                string contactlist = "";
+                                Dictionary<string, string> Cucontacts = this.js["Credit Unions"][this.QAmap[1]]["Contacts"].ToObject<Dictionary<string, string>>();
+                                Dictionary<string, string> Globalcontacts = this.js["Contacts"].ToObject<Dictionary<string, string>>();
+                                foreach (string contact in steps.Value)
+                                {
+                                    string thiscontact = contact.Replace("$", "");
+                                    if (this.contacts.Contains(contact.Replace("$", "")))
                                     {
-                                        number = Cucontacts[thiscontact];
+                                        string number = Globalcontacts[thiscontact];
+                                        if (Cucontacts.ContainsKey(thiscontact))
+                                        {
+                                            number = Cucontacts[thiscontact];
+                                        }
+
+                                        contactlist += thiscontact + ": " + number;
                                     }
-                                    
-                                    contactlist += thiscontact + ": " + number;
+                                    else
+                                    {
+                                        contactlist += thiscontact + ": [Contact Not Found] ";
+                                    }
+                                    if (contact != steps.Value[steps.Value.Length - 1])
+                                    {
+                                        contactlist += " , ";
+                                    }
+
                                 }
-                                else
-                                {
-                                    contactlist += thiscontact + ": [Contact Not Found] ";
-                                }
-                                if (contact != steps.Value[steps.Value.Length - 1])
-                                {
-                                    contactlist += " , ";
-                                }
+                                this.contacts = contactlist;
 
                             }
-                            this.contacts = contactlist;
-
                         }
                     }
                 }
             }
+            catch
+            {
+                Console.Write("NO CONFIG FOUND FOR STEPS");
+            }
+            
         }
     }
 }

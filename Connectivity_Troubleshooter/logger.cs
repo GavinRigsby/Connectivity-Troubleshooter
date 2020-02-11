@@ -18,83 +18,94 @@ namespace Connectivity_Troubleshooter
         public string gateway;
         public logger(Json_tool toolkit)
         {
-            Dictionary<string, string> LogOptions = toolkit.js["Logs"].ToObject<Dictionary<string, string>>();
-            string IP = "", OS = "", name = "", email = "", CU = "", Error = "", defaultgate = "", arpReturn = "";
             bool ReturnIp = false, ReturnOS = false, ReturnEmail = false, ReturnCU = false, ReturnError = false, BothTime = false, Localtime = false, UTCtime = false, ReturnGateway = true, ReturnARP = true;
-            foreach (KeyValuePair<string,string> option in LogOptions)
+            string IP = "", OS = "", name = "", email = "", CU = "", Error = "", defaultgate = "", arpReturn = "";
+            try
             {
-                if (option.Value == "True")
+                Dictionary<string, string> LogOptions = toolkit.js["Logs"].ToObject<Dictionary<string, string>>();
+                foreach (KeyValuePair<string, string> option in LogOptions)
                 {
-                    if (option.Key == "ReturnIP"){
-                        var host = Dns.GetHostEntry(Dns.GetHostName());
-                        foreach (var ip in host.AddressList)
-                        {
-                            if (ip.AddressFamily == AddressFamily.InterNetwork)
-                            {
-                                IP = ip.ToString();
-                                ReturnIp = true;
-                                break;
-                            }
-                        }
-                        if (IP == "")
-                        {
-                            throw new Exception("No network adapters with an IPv4 address in the system!");
-                        }
-                    }
-                    if (option.Key == "ReturnOS")
+                    if (option.Value == "True")
                     {
-                        using (ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_OperatingSystem"))
+                        if (option.Key == "ReturnIP")
                         {
-                            ManagementObjectCollection information = searcher.Get();
-                            if (information != null)
+                            var host = Dns.GetHostEntry(Dns.GetHostName());
+                            foreach (var ip in host.AddressList)
                             {
-                                foreach (ManagementObject obj in information)
+                                if (ip.AddressFamily == AddressFamily.InterNetwork)
                                 {
-                                    OS = obj["Caption"].ToString() + " - " + obj["OSArchitecture"].ToString();
+                                    IP = ip.ToString();
+                                    ReturnIp = true;
+                                    break;
                                 }
                             }
-                            OS = OS.Replace("NT 5.1.2600", "XP");
-                            OS = OS.Replace("NT 5.2.3790", "Server 2003");
-                            ReturnOS = true;
+                            if (IP == "")
+                            {
+                                throw new Exception("No network adapters with an IPv4 address in the system!");
+                            }
                         }
-                    }
-                    if (option.Key == "ReturnName")
-                    {
-                        if (toolkit.QAmap[2] == ""){
-                            name = "user";
-                        }
-                        else {
-                            name = toolkit.QAmap[2];
-                        }
-                    }
-                    if (option.Key == "ReturnEmail")
-                    {
-                        if (toolkit.QAmap[3] == "")
+                        if (option.Key == "ReturnOS")
                         {
-                            email = "unknown";
+                            using (ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_OperatingSystem"))
+                            {
+                                ManagementObjectCollection information = searcher.Get();
+                                if (information != null)
+                                {
+                                    foreach (ManagementObject obj in information)
+                                    {
+                                        OS = obj["Caption"].ToString() + " - " + obj["OSArchitecture"].ToString();
+                                    }
+                                }
+                                OS = OS.Replace("NT 5.1.2600", "XP");
+                                OS = OS.Replace("NT 5.2.3790", "Server 2003");
+                                ReturnOS = true;
+                            }
                         }
-                        else
+                        if (option.Key == "ReturnName")
                         {
-                            email = toolkit.QAmap[2];
+                            if (toolkit.QAmap[2] == "")
+                            {
+                                name = "user";
+                            }
+                            else
+                            {
+                                name = toolkit.QAmap[2];
+                            }
                         }
-                        ReturnEmail = true;
+                        if (option.Key == "ReturnEmail")
+                        {
+                            if (toolkit.QAmap[3] == "")
+                            {
+                                email = "unknown";
+                            }
+                            else
+                            {
+                                email = toolkit.QAmap[2];
+                            }
+                            ReturnEmail = true;
+                        }
+                        if (option.Key == "ReturnCU")
+                        {
+                            CU = toolkit.QAmap[1];
+                            ReturnCU = true;
+                        }
+                        if (option.Key == "ReturnError")
+                        {
+                            Error = toolkit.Ernum;
+                            ReturnError = true;
+                        }
+                        DateTime Utctime = DateTime.UtcNow;
+                        DateTime localtime = DateTime.Now;
+                        string[] log = { Error, localtime.ToString(), Utctime.ToString(), IP, OS, CU, name, email };
+                        this.logs = log;
                     }
-                    if (option.Key == "ReturnCU")
-                    {
-                        CU = toolkit.QAmap[1];
-                        ReturnCU = true;
-                    }
-                    if (option.Key == "ReturnError")
-                    {
-                        Error =  toolkit.Ernum;
-                        ReturnError = true;
-                    }
-                    DateTime Utctime = DateTime.UtcNow;
-                    DateTime localtime = DateTime.Now;
-                    string[] log = { Error, localtime.ToString(), Utctime.ToString(), IP, OS, CU, name, email };
-                    this.logs = log;
                 }
             }
+            catch
+            {
+                Console.Write("Can't find return log setting");
+            }
+            
             using (StreamWriter writer = new StreamWriter(@"out.log"))
             {
                 string logfor = "", timing = "", sysinfo = "", errorinfo = "", outlog = "";
@@ -104,7 +115,14 @@ namespace Connectivity_Troubleshooter
                 }
                 else
                 {
-                    logfor = "This log is for " + this.logs[6] + " at " + this.logs[5] + "\n";
+                    try
+                    {
+                        logfor = "This log is for " + this.logs[6] + " at " + this.logs[5] + "\n";
+                    }
+                    catch
+                    {
+                        logfor = "unknown username & credit union \n";
+                    }
                 }
 
                 //Time Logging

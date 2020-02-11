@@ -25,7 +25,21 @@ namespace Connectivity_Troubleshooter
     /// Interaction logic for Window1.xaml
     /// </summary>
 
-    
+    public delegate void VoidDelegate();
+
+    public static class Utils
+    {
+        public static void Try(VoidDelegate v)
+        {
+            try
+            {
+                v();
+            }
+            catch { }
+        }
+    }
+
+
     public partial class Window1 : Window, INotifyPropertyChanged
     {
         public Json_tool toolkit;
@@ -346,15 +360,17 @@ namespace Connectivity_Troubleshooter
                 }
             }
 
+
+
             Dictionary<string, int> gate = new Dictionary<string, int>();
             gate.Add("f|" + gateway, 1);
 
-            PendingDevices.Enqueue(gate);
-
-            PendingDevices.Enqueue(WAN.First());
-            PendingDevices.Enqueue(ESP_WAN.First());
-            PendingDevices.Enqueue(ESP_VPN.First());
-            PendingDevices.Enqueue(DNS.First());
+            Utils.Try(() => PendingDevices.Enqueue(gate));
+            Utils.Try(() => PendingDevices.Enqueue(WAN.First()));
+            Utils.Try(() => PendingDevices.Enqueue(ESP_WAN.First()));
+            Utils.Try(() => PendingDevices.Enqueue(ESP_VPN.First()));
+            Utils.Try(() => PendingDevices.Enqueue(DNS.First()));
+           
 
             int additionalping = 0;
             while (pinging)
