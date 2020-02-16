@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using System.Web;
 using System.Windows.Controls;
 using System.Windows;
+using System.Linq;
 
 namespace Connectivity_Troubleshooter
 {
@@ -148,7 +149,7 @@ namespace Connectivity_Troubleshooter
         {
 
             Dictionary<string, Dictionary<string, Dictionary<string, int>>> GlobTargets = this.js["Targets"].ToObject<Dictionary<string, Dictionary<string, Dictionary<string, int>>>>();
-            Dictionary<string, Dictionary<string, Dictionary<string, int>>> Targets = GlobTargets;
+            Dictionary<string, Dictionary<string, Dictionary<string, int>>> Targets = new Dictionary<string, Dictionary<string, Dictionary<string, int>>>();
             bool available = true;
             try { 
                 Dictionary<string, Dictionary<string, Dictionary<string, int>>> CUTargets = this.js["Credit Unions"][this.QAmap[1]]["Targets"].ToObject<Dictionary<string, Dictionary<string, Dictionary<string, int>>>>();
@@ -161,25 +162,31 @@ namespace Connectivity_Troubleshooter
             {
                 Dictionary<string, Dictionary<string, Dictionary<string, int>>> CUTargets = this.js["Credit Unions"][this.QAmap[1]]["Targets"].ToObject<Dictionary<string, Dictionary<string, Dictionary<string, int>>>>();
                 string[] tars = { "WAN", "ESP WAN", "ESP VPN", "DNS" };
-                bool[] CUavailable = { false, false, false, false };
                 foreach (KeyValuePair<string, Dictionary<string, Dictionary<string, int>>> item in GlobTargets)
                 {
-                    if (CUTargets.ContainsKey(item.Key))
+                    int index = Array.IndexOf(tars, item.Key);
+                    CUTargets.TryGetValue(tars[index], out Dictionary<string, Dictionary<string, int>> newvals);
+                    newvals.TryGetValue("IP", out Dictionary<string, int> CUIP);
+                    List<KeyValuePair<string, int>> CUList = CUIP.ToList<KeyValuePair<string, int>>();
+                    item.Value.TryGetValue("IP", out Dictionary<string, int> GLIP);
+                    List<KeyValuePair<string, int>> GLList = GLIP.ToList<KeyValuePair<string, int>>();
+                    Dictionary<string, Dictionary<string, int>> NewIP = new Dictionary<string, Dictionary<string, int>>();
+                    Dictionary<string, int> Addresses = new Dictionary<string, int>();
+                    for (int i = 0; i < CUList.Count(); i++)
                     {
-                        CUavailable[Array.IndexOf(tars, item.Key)] = true;
+                        Addresses.Add(CUList[i].Key, CUList[i].Value);
                     }
-                }
-                for (int i = 0; i < tars.Length; i++)
-                {
-                    if (CUavailable[i])
+                    for (int i = 0; i < GLList.Count(); i++)
                     {
-                        Targets[tars[i]] = CUTargets[tars[i]];
+                        Addresses.Add(GLList[i].Key, GLList[i].Value);
                     }
+                    NewIP.Add("IP", Addresses);
+                    Targets[tars[index]] = NewIP;
+                    Console.Write("YESS");
                 }
             }
             this.targets = Targets;
         }
-
 
         public bool QAMap()
         {

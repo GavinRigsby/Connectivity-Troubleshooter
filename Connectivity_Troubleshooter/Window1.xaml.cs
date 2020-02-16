@@ -69,6 +69,7 @@ namespace Connectivity_Troubleshooter
             string[] identifier = host.Split('|');
             string proticolID = identifier[0];
             string proticolIP = identifier[1];
+            
 
 
             int timeout = 5000;
@@ -142,6 +143,7 @@ namespace Connectivity_Troubleshooter
             string val = value.ToString() + "9" + weight.ToString();
             ret.Add(proticolID,val);
             queue.Enqueue(ret);
+            
 
         }
 
@@ -367,10 +369,16 @@ namespace Connectivity_Troubleshooter
 
             Utils.Try(() => PendingDevices.Enqueue(gate));
             Utils.Try(() => PendingDevices.Enqueue(WAN.First()));
+            WAN.RemoveAt(0);
             Utils.Try(() => PendingDevices.Enqueue(ESP_WAN.First()));
+            ESP_WAN.RemoveAt(0);
             Utils.Try(() => PendingDevices.Enqueue(ESP_VPN.First()));
+            ESP_VPN.RemoveAt(0);
             Utils.Try(() => PendingDevices.Enqueue(DNS.First()));
-           
+            DNS.RemoveAt(0);
+
+
+            ConcurrentQueue<Thread> AllThreads = new ConcurrentQueue<Thread>();
 
             int additionalping = 0;
             while (pinging)
@@ -387,159 +395,179 @@ namespace Connectivity_Troubleshooter
                         Thread thread = new Thread(() => GetNetworkStats(item.Key, 30, PingOut, item.Value));
                         thread.SetApartmentState(ApartmentState.STA);
                         thread.Start();
-                        lastthread = thread;
+                        AllThreads.Enqueue(thread);
                         Dictionary<string, int> other = new Dictionary<string, int>();
                         PendingDevices.TryDequeue(out other);
                     }
                 }
-                while (lastthread.IsAlive) {
-                    if (PingOut.TryDequeue(out Dictionary<string, string> endping))
+                while (AllThreads.Count > 0) {
+                    Thread t;
+                    AllThreads.TryDequeue(out t);
+                    if (!t.IsAlive)
                     {
-                        foreach (KeyValuePair<string, string> p in endping)
+                        if (PingOut.TryDequeue(out Dictionary<string, string> endping))
                         {
-                            string PID = p.Key;
-                            string[] retVals = p.Value.Split('9');
-                            int value = Convert.ToInt32(retVals[0]);
-                            int weight = Convert.ToInt32(retVals[1]);
-                            string ipname;
-                            if (PID == "a")
+                            foreach (KeyValuePair<string, string> p in endping)
                             {
-                                ipname = "WAN";
-                            }
-                            else if (PID == "b")
-                            {
-                                ipname = "ESP WAN";
-                            }
-                            else if (PID == "c")
-                            {
-                                ipname = "ESP VPN";
-                            }
-                            else if (PID == "d")
-                            {
-                                ipname = "DNS";
-                            }
-                            else if (PID == "e")
-                            {
-                                ipname = "Network Device";
-                            }
-                            else if (PID == "f")
-                            {
-                                ipname = "Default Gateway";
-                            }
-                            else
-                            {
-                                ipname = "ERROR";
-                            }
-                            Dispatcher.Invoke(() =>
-                            {
-                                Indicator ind = new Indicator();
-                            
-                            
-                                if (value == 1)
+                                string PID = p.Key;
+                                string[] retVals = p.Value.Split('9');
+                                int value = Convert.ToInt32(retVals[0]);
+                                int weight = Convert.ToInt32(retVals[1]);
+                                string ipname;
+                                if (PID == "a")
                                 {
-                                    ind.colorupdate(ipname, weight);
-                                    if (ipname == "WAN")
-                                    {
-                                        endWan = weight;
-                                    }
-                                    if (ipname == "ESP WAN")
-                                    {
-                                        endEspWan = weight;
-                                    }
-                                    if (ipname == "ESP VPN")
-                                    {
-                                        endEspVpn = weight;
-                                    }
-                                    if (ipname == "DNS")
-                                    {
-                                        endDns = weight;
-                                    }
-                                    if (ipname == "Network Device")
-                                    {
-                                        endNet = weight;
-                                    }
-                                    else
-                                    {
-                                        endDefGat = 1;
-                                    }
+                                    ipname = "WAN";
+                                }
+                                else if (PID == "b")
+                                {
+                                    ipname = "ESP WAN";
+                                }
+                                else if (PID == "c")
+                                {
+                                    ipname = "ESP VPN";
+                                }
+                                else if (PID == "d")
+                                {
+                                    ipname = "DNS";
+                                }
+                                else if (PID == "e")
+                                {
+                                    ipname = "Network Device";
+                                }
+                                else if (PID == "f")
+                                {
+                                    ipname = "Default Gateway";
                                 }
                                 else
                                 {
-                                    additionalping++;
-                                    ind.colorupdate(ipname, value);
-                                    int itter = 0;
-                                    if (ipname == "WAN")
-                                    {
-                                        endWan = weight;
-                                        foreach (Dictionary<string, int> item in WAN)
-                                        {
-                                            if (itter == additionalping)
-                                            {
-                                                PendingDevices.Enqueue(item);
-                                                break;
-                                            }
-                                            itter++;
-                                        }
-
-                                    }
-                                    if (ipname == "ESP WAN")
-                                    {
-                                        endEspWan = weight;
-                                        foreach (Dictionary<string, int> item in ESP_WAN)
-                                        {
-                                            if (itter == additionalping)
-                                            {
-                                                PendingDevices.Enqueue(item);
-                                                break;
-                                            }
-                                            itter++;
-                                        }
-                                    }
-                                    if (ipname == "ESP VPN")
-                                    {
-                                        endEspVpn = weight;
-                                        foreach (Dictionary<string, int> item in ESP_VPN)
-                                        {
-                                            if (itter == additionalping)
-                                            {
-                                                PendingDevices.Enqueue(item);
-                                                break;
-                                            }
-                                            itter++;
-                                        }
-                                    }
-                                    if (ipname == "DNS")
-                                    {
-                                        endDns = weight;
-                                        foreach (Dictionary<string, int> item in DNS)
-                                        {
-                                            if (itter == additionalping)
-                                            {
-                                                PendingDevices.Enqueue(item);
-                                                break;
-                                            }
-                                            itter++;
-                                        }
-                                    }
-                                    if (ipname == "Network Device")
-                                    {
-                                        endNet = weight;
-                                        foreach (Dictionary<string, int> item in NET_DEVICES)
-                                        {
-                                            if (itter == additionalping)
-                                            {
-                                                PendingDevices.Enqueue(item);
-                                                break;
-                                            }
-                                            itter++;
-                                        }
-                                    }
+                                    ipname = "ERROR";
                                 }
-                                this.Indicators.Children.Add(ind.returnGrid());
+                                Dispatcher.Invoke(() =>
+                                {
+                                    Indicator ind = new Indicator();
 
-                            });
+
+                                    if (value == 1)
+                                    {
+                                        ind.colorupdate(ipname, weight);
+                                        if (ipname == "WAN")
+                                        {
+                                            endWan = weight;
+                                        }
+                                        if (ipname == "ESP WAN")
+                                        {
+                                            endEspWan = weight;
+                                        }
+                                        if (ipname == "ESP VPN")
+                                        {
+                                            endEspVpn = weight;
+                                        }
+                                        if (ipname == "DNS")
+                                        {
+                                            endDns = weight;
+                                        }
+                                        if (ipname == "Network Device")
+                                        {
+                                            endNet = weight;
+                                        }
+                                        else
+                                        {
+                                            endDefGat = 1;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        additionalping++;
+                                        ind.colorupdate(ipname, value);
+                                        int itter = 0;
+                                        if (ipname == "WAN")
+                                        {
+                                            endWan = value;
+                                            foreach (Dictionary<string, int> item in WAN)
+                                            {
+                                                if (itter < additionalping)
+                                                {
+                                                    WAN.Remove(item);
+                                                    PendingDevices.Enqueue(item);
+                                                    break;
+                                                }
+                                                itter++;
+                                            }
+
+                                        }
+                                        if (ipname == "ESP WAN")
+                                        {
+                                            endEspWan = value;
+                                            foreach (Dictionary<string, int> item in ESP_WAN)
+                                            {
+                                                if (itter < additionalping)
+                                                {
+                                                    ESP_WAN.Remove(item);
+                                                    PendingDevices.Enqueue(item);
+                                                    break;
+                                                }
+                                                itter++;
+                                            }
+                                        }
+                                        if (ipname == "ESP VPN")
+                                        {
+                                            endEspVpn = value;
+                                            foreach (Dictionary<string, int> item in ESP_VPN)
+                                            {
+                                                if (itter < additionalping)
+                                                {
+                                                    ESP_VPN.Remove(item);
+                                                    PendingDevices.Enqueue(item);
+                                                    break;
+                                                }
+                                                itter++;
+                                            }
+                                        }
+                                        if (ipname == "DNS")
+                                        {
+                                            endDns = value;
+                                            foreach (Dictionary<string, int> item in DNS)
+                                            {
+                                                if (itter < additionalping)
+                                                {
+                                                    DNS.Remove(item);
+                                                    PendingDevices.Enqueue(item);
+                                                    break;
+                                                }
+                                                itter++;
+                                            }
+                                        }
+                                        if (ipname == "Network Device")
+                                        {
+                                            endNet = value;
+                                            foreach (Dictionary<string, int> item in NET_DEVICES)
+                                            {
+                                                if (itter < additionalping)
+                                                {
+                                                    NET_DEVICES.Remove(item);
+                                                    PendingDevices.Enqueue(item);
+                                                    break;
+                                                }
+                                                itter++;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            endDefGat = value;
+                                        }
+                                    }
+                                    this.Indicators.Children.Add(ind.returnGrid());
+
+                                });
+                            }
                         }
                     }
+                    else
+                    {
+                        AllThreads.Enqueue(t);
+                    }
+                    
+                    
                 }
 
             }
