@@ -207,6 +207,32 @@ namespace Connectivity_Troubleshooter
 
         public Thread lastthread;
 
+        public void IncCounter()
+        {
+            string txt = running.Text;
+            if (txt == "Tests Running: None")
+            {
+                running.Text = "Tests Running: 1";
+            }
+            else
+            {
+                running.Text = ("Tests Running: " + (Convert.ToInt32(txt.Substring(txt.Length - 1)) + 1).ToString());
+            }
+        }
+
+        public void DecCounter()
+        {
+            string txt = running.Text;
+            if (txt == "Tests Running: 1")
+            {
+                running.Text = "Tests Running: None";
+            }
+            else
+            {
+                running.Text = ("Tests Running: " + (Convert.ToInt32(txt.Substring(txt.Length - 1)) - 1).ToString());
+            }
+        }
+
         public void make_Pings()
         {
             //Declares all the neccessary elements needed
@@ -368,13 +394,18 @@ namespace Connectivity_Troubleshooter
             gate.Add("f|" + gateway, 1);
 
             Utils.Try(() => PendingDevices.Enqueue(gate));
+            Dispatcher.Invoke(IncCounter);
             Utils.Try(() => PendingDevices.Enqueue(WAN.First()));
+            Dispatcher.Invoke(IncCounter);
             WAN.RemoveAt(0);
             Utils.Try(() => PendingDevices.Enqueue(ESP_WAN.First()));
+            Dispatcher.Invoke(IncCounter);
             ESP_WAN.RemoveAt(0);
             Utils.Try(() => PendingDevices.Enqueue(ESP_VPN.First()));
+            Dispatcher.Invoke(IncCounter);
             ESP_VPN.RemoveAt(0);
             Utils.Try(() => PendingDevices.Enqueue(DNS.First()));
+            Dispatcher.Invoke(IncCounter);
             DNS.RemoveAt(0);
 
 
@@ -489,6 +520,7 @@ namespace Connectivity_Troubleshooter
                                                 {
                                                     WAN.Remove(item);
                                                     PendingDevices.Enqueue(item);
+                                                    Dispatcher.Invoke(IncCounter);
                                                     break;
                                                 }
                                                 itter++;
@@ -504,6 +536,7 @@ namespace Connectivity_Troubleshooter
                                                 {
                                                     ESP_WAN.Remove(item);
                                                     PendingDevices.Enqueue(item);
+                                                    Dispatcher.Invoke(IncCounter);
                                                     break;
                                                 }
                                                 itter++;
@@ -518,6 +551,7 @@ namespace Connectivity_Troubleshooter
                                                 {
                                                     ESP_VPN.Remove(item);
                                                     PendingDevices.Enqueue(item);
+                                                    Dispatcher.Invoke(IncCounter);
                                                     break;
                                                 }
                                                 itter++;
@@ -532,6 +566,7 @@ namespace Connectivity_Troubleshooter
                                                 {
                                                     DNS.Remove(item);
                                                     PendingDevices.Enqueue(item);
+                                                    Dispatcher.Invoke(IncCounter);
                                                     break;
                                                 }
                                                 itter++;
@@ -546,6 +581,7 @@ namespace Connectivity_Troubleshooter
                                                 {
                                                     NET_DEVICES.Remove(item);
                                                     PendingDevices.Enqueue(item);
+                                                    Dispatcher.Invoke(IncCounter);
                                                     break;
                                                 }
                                                 itter++;
@@ -556,6 +592,7 @@ namespace Connectivity_Troubleshooter
                                             endDefGat = value;
                                         }
                                     }
+                                    DecCounter();
                                     this.Indicators.Children.Add(ind.returnGrid());
 
                                 });
@@ -575,6 +612,7 @@ namespace Connectivity_Troubleshooter
             toolkit.NID = endWan.ToString() + endEspWan.ToString() + endEspVpn.ToString() + endDns.ToString() + endDefGat.ToString() + endNet.ToString() + sqlopen.ToString();
             this.ErrorMap += toolkit.NID;
             this.toolkit.Ernum = this.ErrorMap;
+            Thread.Sleep(2000);
             Dispatcher.Invoke(() =>
             {
                 InfoWin Info = new InfoWin(this.toolkit);

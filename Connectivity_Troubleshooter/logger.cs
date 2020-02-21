@@ -18,7 +18,7 @@ namespace Connectivity_Troubleshooter
         public string gateway;
         public logger(Json_tool toolkit)
         {
-            bool ReturnIp = false, ReturnOS = false, ReturnEmail = false, ReturnCU = false, ReturnError = false, BothTime = false, Localtime = false, UTCtime = false, ReturnGateway = true, ReturnARP = true;
+            bool ReturnIp = false, ReturnOS = false, ReturnEmail = false, ReturnCU = false, ReturnError = false, BothTime = true, Localtime = false, UTCtime = false, ReturnGateway = true, ReturnARP = false;
             string IP = "", OS = "", name = "", email = "", CU = "", Error = "", defaultgate = "", arpReturn = "";
             try
             {
@@ -128,7 +128,7 @@ namespace Connectivity_Troubleshooter
                 //Time Logging
                 if (BothTime || (UTCtime && Localtime))
                 {
-                    timing = "Log taken place " + this.logs[1] + " Local time and " + this.logs[2] + "UTC \n";
+                    timing = "Log taken place " + this.logs[1] + " Local time and " + this.logs[2] + " UTC \n";
                 }
                 else if (UTCtime || Localtime)
                 {
@@ -138,7 +138,7 @@ namespace Connectivity_Troubleshooter
                     }
                     else
                     {
-                        timing = "Log taken place " + this.logs[2] + "UTC \n";
+                        timing = "Log taken place " + this.logs[2] + " UTC \n";
                     }
                 }
 

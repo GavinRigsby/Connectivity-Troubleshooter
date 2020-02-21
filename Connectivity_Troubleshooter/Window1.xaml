@@ -16,8 +16,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Name="running" Text="Test Running: None" Grid.Column="0" FontSize="8" FontWeight="Black" TextAlignment="Left"/>
-            <TextBlock Name="finished" Text="0/6 Tests Run" Grid.Column="1" FontSize="8" FontWeight="Black" Padding="0,0,0,0" TextAlignment="Right"/>
+            <TextBlock Name="running" Text="Tests Running: None" Grid.Column="0" FontSize="8" FontWeight="Black" TextAlignment="Left"/>
         </Grid>
         <StackPanel Name="Indicators" Margin="25,20,25,20" Height="150"/>
     </StackPanel>
